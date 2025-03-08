@@ -183,16 +183,22 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({ topic }),
                 });
                 
+                const data = await response.json();
+                
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to fetch questions');
+                    throw new Error(data.error || 'Failed to generate questions');
                 }
                 
-                quizData = await response.json();
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid response format');
+                }
+                
+                quizData = data;
                 displayQuestions(quizData);
                 
                 // Hide loading, show quiz
@@ -201,6 +207,7 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert(error.message || 'Error generating quiz. Please try again.');
+                // Reset UI state
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('topicForm').classList.remove('hidden');
             }

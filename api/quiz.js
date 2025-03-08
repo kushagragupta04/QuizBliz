@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function generateQuestions(topic) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     const prompt = `Generate 10 multiple choice questions about ${topic}. 
     Return ONLY a JSON array with this exact format for each question:
@@ -18,15 +18,27 @@ async function generateQuestions(topic) {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         let text = response.text();
-        text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        return JSON.parse(text);
+        
+        // Clean up the response text
+        text = text.replace(/```json\n?/g, '')
+                  .replace(/```\n?/g, '')
+                  .replace(/^\s*\[\s*/, '[')  // Clean up leading whitespace
+                  .replace(/\s*\]\s*$/, ']')  // Clean up trailing whitespace
+                  .trim();
+        
+        // Validate JSON before returning
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) {
+            throw new Error('Invalid response format');
+        }
+        return parsed;
     } catch (error) {
         console.error('Error generating questions:', error);
-        throw error;
+        throw new Error('Failed to generate valid quiz questions. Please try again.');
     }
 }
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -53,6 +65,8 @@ export default async function handler(req, res) {
         res.status(200).json(questions);
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Failed to generate questions' });
+        res.status(500).json({ 
+            error: error.message || 'Failed to generate questions'
+        });
     }
 } 
