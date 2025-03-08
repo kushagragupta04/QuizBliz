@@ -12,7 +12,8 @@ async function generateQuestions(topic) {
         "question": "question text",
         "options": ["option1", "option2", "option3", "option4"],
         "correct_answer": "correct option"
-    }`;
+    }
+    The response should be a valid JSON array starting with [ and ending with ]. No other text or formatting.`;
 
     try {
         const result = await model.generateContent(prompt);
@@ -22,19 +23,32 @@ async function generateQuestions(topic) {
         // Clean up the response text
         text = text.replace(/```json\n?/g, '')
                   .replace(/```\n?/g, '')
-                  .replace(/^\s*\[\s*/, '[')  // Clean up leading whitespace
-                  .replace(/\s*\]\s*$/, ']')  // Clean up trailing whitespace
+                  .replace(/^\s*/, '')  // Remove leading whitespace
+                  .replace(/\s*$/, '')  // Remove trailing whitespace
                   .trim();
+        
+        // Ensure the text starts with [ and ends with ]
+        if (!text.startsWith('[') || !text.endsWith(']')) {
+            throw new Error('Invalid response format: Response must be a JSON array');
+        }
         
         // Validate JSON before returning
         const parsed = JSON.parse(text);
         if (!Array.isArray(parsed)) {
-            throw new Error('Invalid response format');
+            throw new Error('Invalid response format: Not an array');
         }
+        
+        // Validate each question object
+        parsed.forEach((question, index) => {
+            if (!question.question || !Array.isArray(question.options) || !question.correct_answer) {
+                throw new Error(`Invalid question format at index ${index}`);
+            }
+        });
+        
         return parsed;
     } catch (error) {
         console.error('Error generating questions:', error);
-        throw new Error('Failed to generate valid quiz questions. Please try again.');
+        throw new Error(`Failed to generate valid quiz questions: ${error.message}`);
     }
 }
 
@@ -64,7 +78,7 @@ module.exports = async (req, res) => {
         const questions = await generateQuestions(topic);
         res.status(200).json(questions);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('API Error:', error);
         res.status(500).json({ 
             error: error.message || 'Failed to generate questions'
         });

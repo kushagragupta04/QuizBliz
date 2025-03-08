@@ -170,6 +170,14 @@
     <script>
         let quizData = [];
 
+        // Function to get the API URL based on environment
+        function getApiUrl() {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                return '';  // Use relative path for local development
+            }
+            return window.location.origin; // Use absolute path for production
+        }
+
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const topic = document.getElementById('topic').value;
@@ -179,7 +187,10 @@
             document.getElementById('loading').classList.remove('hidden');
             
             try {
-                const response = await fetch('/api/quiz.js', {
+                const apiUrl = `${getApiUrl()}/api/quiz.js`;
+                console.log('Fetching from:', apiUrl); // Debug log
+                
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,16 +199,34 @@
                     body: JSON.stringify({ topic }),
                 });
                 
+                // Log response status and headers for debugging
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Failed to generate questions' }));
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(errorData.error || `Server error: ${response.status}`);
+                    } catch (e) {
+                        throw new Error(`Server error: ${response.status}. ${errorText}`);
+                    }
                 }
                 
-                const data = await response.json().catch(() => {
+                const responseText = await response.text();
+                console.log('Response text:', responseText); // Debug log
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
                     throw new Error('Invalid response format from server');
-                });
+                }
                 
                 if (!Array.isArray(data)) {
+                    console.error('Invalid data format:', data);
                     throw new Error('Invalid quiz data format received');
                 }
                 
