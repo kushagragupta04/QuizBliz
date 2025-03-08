@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizBliz - AI Quiz Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#1a1a1a',
+                            200: '#2d2d2d',
+                            300: '#404040',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .strike-through {
+            text-decoration: line-through;
+            color: #ef4444;
+        }
+        .correct-answer {
+            color: #22c55e;
+        }
+        .glass-effect {
+            background: rgba(45, 45, 45, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Topic Form -->
+        <div id="topicForm" class="mb-8">
+            <h1 class="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">QuizBliz</h1>
+            <div class="text-center mb-8 text-gray-300">
+                <p>Enter any topic to generate a 10-question quiz instantly.</p>
+                <p>Evaluate your knowledge and get detailed statistics right away!</p>
+            </div>
+            <form id="quizForm" class="space-y-4 flex justify-center">
+                <div class="glass-effect p-6 rounded-lg w-full max-w-lg">
+                    <label for="topic" class="block text-lg mb-2">Enter Quiz Topic:</label>
+                    <input type="text" id="topic" name="topic" required
+                        class="w-full p-3 bg-dark-300 rounded border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <button type="submit"
+                        class="mt-4 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                        Generate Quiz
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden text-center py-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-lg">Generating your quiz questions...</p>
+        </div>
+
+        <!-- Quiz Questions -->
+        <div id="quizContainer" class="hidden">
+            <form id="questionForm">
+                <div id="questionsContainer" class="glass-effect p-6 rounded-lg mb-8"></div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                    Submit Quiz
+                </button>
+            </form>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden space-y-8">
+            <div class="glass-effect p-6 rounded-lg text-center">
+                <h2 class="text-2xl font-bold mb-4">Quiz Results</h2>
+                
+                <!-- Score Display -->
+                <div class="mb-6">
+                    <p class="text-xl mb-2">Your score: <span id="score" class="text-green-500 font-bold"></span></p>
+                </div>
+
+                <!-- Pie Chart -->
+                <div class="mb-6">
+                    <canvas id="resultsPieChart" class="mx-auto" width="200" height="200"></canvas>
+                </div>
+
+                <button onclick="location.reload()"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded transition duration-200">
+                    Try Another Quiz
+                </button>
+            </div>
+
+            <!-- Detailed Question Review -->
+            <div id="questionReview" class="glass-effect p-6 rounded-lg"></div>
+        </div>
+    </div>
+
+    <script>
+        let quizData = [];
+
+        document.getElementById('quizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const topic = document.getElementById('topic').value;
+            
+            // Show loading state
+            document.getElementById('topicForm').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ topic }),
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch questions');
+                
+                quizData = await response.json();
+                displayQuestions(quizData);
+                
+                // Hide loading, show quiz
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('quizContainer').classList.remove('hidden');
+            } catch (error) {
+                alert('Error generating quiz. Please try again.');
+                location.reload();
+            }
+        });
+
+        function displayQuestions(questions) {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = questions.map((q, idx) => `
+                <div class="mb-8 last:mb-0">
+                    <p class="text-lg font-semibold mb-4">${idx + 1}. ${q.question}</p>
+                    <div class="space-y-3">
+                        ${q.options.map(option => `
+                            <label class="block w-full p-3 rounded hover:bg-dark-300 cursor-pointer transition-colors">
+                                <div class="flex items-start md:items-center space-x-3">
+                                    <input type="radio" name="q${idx}" value="${option}" required
+                                        class="mt-1 md:mt-0 form-radio text-blue-600 focus:ring-blue-500 h-5 w-5">
+                                    <span class="text-sm md:text-base break-words">${option}</span>
+                                </div>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('questionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let score = 0;
+            let userAnswers = [];
+            
+            quizData.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+                if (selected) {
+                    userAnswers.push({
+                        question: q.question,
+                        selectedAnswer: selected.value,
+                        correctAnswer: q.correct_answer,
+                        isCorrect: selected.value === q.correct_answer
+                    });
+                    if (selected.value === q.correct_answer) {
+                        score++;
+                    }
+                }
+            });
+            
+            // Show results
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            // Update score text
+            const scorePercentage = (score / quizData.length) * 100;
+            document.getElementById('score').textContent = `${score} out of ${quizData.length} (${scorePercentage.toFixed(1)}%)`;
+
+            // Create pie chart
+            const ctx = document.getElementById('resultsPieChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Correct', 'Incorrect'],
+                    datasets: [{
+                        data: [score, quizData.length - score],
+                        backgroundColor: ['#22c55e', '#ef4444'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e5e7eb'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Display detailed question review
+            const reviewContainer = document.getElementById('questionReview');
+            reviewContainer.innerHTML = `
+                <div class="space-y-6">
+                    ${userAnswers.map((answer, idx) => `
+                        <div class="mb-6 last:mb-0">
+                            <p class="text-lg font-semibold mb-4">${idx + 1}. ${answer.question}</p>
+                            <div class="space-y-2">
+                                ${answer.isCorrect 
+                                    ? `<p class="correct-answer text-base">✓ Correct: ${answer.selectedAnswer}</p>`
+                                    : `<p class="space-y-2">
+                                        <span class="strike-through block text-base">✗ Your answer: ${answer.selectedAnswer}</span>
+                                        <span class="correct-answer block text-base">Correct answer: ${answer.correctAnswer}</span>
+                                       </p>`
+                                }
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="location.reload()"
+                        class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded transition duration-200">
+                        Try Another Topic
+                    </button>
+                    <button onclick="document.getElementById('results').classList.add('hidden'); document.getElementById('quizContainer').classList.remove('hidden');"
+                        class="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded transition duration-200">
+                        Retake This Quiz
+                    </button>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html> 

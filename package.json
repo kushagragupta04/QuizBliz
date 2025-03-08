@@ -1,0 +1,15 @@
+{
+  "name": "quiz-app",
+  "version": "1.0.0",
+  "description": "AI-powered quiz application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.2.0",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "quiz-app": "file:"
+  }
+}
