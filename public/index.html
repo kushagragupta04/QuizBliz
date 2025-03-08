@@ -169,11 +169,6 @@
 
     <script>
         let quizData = [];
-        
-        // Configure the API URL based on environment
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'https://quizbliz.vercel.app';
 
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -184,13 +179,7 @@
             document.getElementById('loading').classList.remove('hidden');
             
             try {
-                // First check if the API is available
-                const healthCheck = await fetch(`${API_URL}/api/health`).catch(() => ({ ok: false }));
-                if (!healthCheck.ok) {
-                    throw new Error('API server is not available');
-                }
-
-                const response = await fetch(`${API_URL}/api/generate-quiz`, {
+                const response = await fetch('/api/quiz', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -212,7 +201,6 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert(error.message || 'Error generating quiz. Please try again.');
-                // Show the form again
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('topicForm').classList.remove('hidden');
             }

@@ -1,7 +1,6 @@
-require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini AI
+// Initialize Gemini AI with the API key from environment variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function generateQuestions(topic) {
@@ -19,10 +18,7 @@ async function generateQuestions(topic) {
         const result = await model.generateContent(prompt);
         const response = await result.response;
         let text = response.text();
-        
-        // Remove any Markdown code block formatting
         text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        
         return JSON.parse(text);
     } catch (error) {
         console.error('Error generating questions:', error);
@@ -34,9 +30,10 @@ export default async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept');
 
+    // Handle preflight request
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;

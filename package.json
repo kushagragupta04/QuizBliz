@@ -1,8 +1,8 @@
 {
-  "name": "quiz-app",
+  "name": "quizbliz",
   "version": "1.0.0",
-  "description": "AI-powered quiz application",
-  "main": "server.js",
+  "description": "AI-powered quiz generator",
+  "main": "api/quiz.js",
   "scripts": {
     "start": "node server.js"
   },
@@ -10,6 +10,7 @@
     "@google/generative-ai": "^0.2.0",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
-    "quiz-app": "file:"
+    "quiz-app": "file:",
+    "quizbliz": "file:"
   }
 }

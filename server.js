@@ -1,12 +1,22 @@
 require('dotenv').config();
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// CORS middleware
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+});
+
 // Middleware
-app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -41,7 +51,7 @@ async function generateQuestions(topic) {
 }
 
 // API endpoint to get quiz questions
-app.post('/api/v1/generate-quiz', async (req, res) => {
+app.post('/api/quiz', async (req, res) => {
     try {
         const { topic } = req.body;
         if (!topic) {
@@ -51,14 +61,8 @@ app.post('/api/v1/generate-quiz', async (req, res) => {
         const questions = await generateQuestions(topic);
         res.json(questions);
     } catch (error) {
-        console.error('Error:', error);
         res.status(500).json({ error: 'Failed to generate questions' });
     }
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
 });
 
 app.listen(port, () => {
