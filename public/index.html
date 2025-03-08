@@ -179,7 +179,7 @@
             document.getElementById('loading').classList.remove('hidden');
             
             try {
-                const response = await fetch('/api/quiz', {
+                const response = await fetch('/api/quiz.js', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,14 +188,17 @@
                     body: JSON.stringify({ topic }),
                 });
                 
-                const data = await response.json();
-                
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to generate questions');
+                    const errorData = await response.json().catch(() => ({ error: 'Failed to generate questions' }));
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
                 }
                 
+                const data = await response.json().catch(() => {
+                    throw new Error('Invalid response format from server');
+                });
+                
                 if (!Array.isArray(data)) {
-                    throw new Error('Invalid response format');
+                    throw new Error('Invalid quiz data format received');
                 }
                 
                 quizData = data;
@@ -206,7 +209,7 @@
                 document.getElementById('quizContainer').classList.remove('hidden');
             } catch (error) {
                 console.error('Error:', error);
-                alert(error.message || 'Error generating quiz. Please try again.');
+                alert(error.message || 'Failed to generate quiz. Please try again.');
                 // Reset UI state
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('topicForm').classList.remove('hidden');
