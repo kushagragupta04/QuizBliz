@@ -173,7 +173,7 @@
         // Configure the API URL based on environment
         const API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:3000' 
-            : 'https://quizbliz.vercel.app/';
+            : 'https://quizbliz.vercel.app';
 
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -190,7 +190,7 @@
                     throw new Error('API server is not available');
                 }
 
-                const response = await fetch(`${API_URL}/api/v1/generate-quiz`, {
+                const response = await fetch(`${API_URL}/api/generate-quiz`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
