@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const cors = require('cors');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -39,7 +41,7 @@ async function generateQuestions(topic) {
 }
 
 // API endpoint to get quiz questions
-app.post('/api/quiz', async (req, res) => {
+app.post('/api/v1/generate-quiz', async (req, res) => {
     try {
         const { topic } = req.body;
         if (!topic) {
@@ -49,8 +51,14 @@ app.post('/api/quiz', async (req, res) => {
         const questions = await generateQuestions(topic);
         res.json(questions);
     } catch (error) {
+        console.error('Error:', error);
         res.status(500).json({ error: 'Failed to generate questions' });
     }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
 });
 
 app.listen(port, () => {

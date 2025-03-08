@@ -169,6 +169,11 @@
 
     <script>
         let quizData = [];
+        
+        // Configure the API URL based on environment
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://quizbliz.vercel.app/';
 
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -179,7 +184,13 @@
             document.getElementById('loading').classList.remove('hidden');
             
             try {
-                const response = await fetch('/api/quiz', {
+                // First check if the API is available
+                const healthCheck = await fetch(`${API_URL}/api/health`).catch(() => ({ ok: false }));
+                if (!healthCheck.ok) {
+                    throw new Error('API server is not available');
+                }
+
+                const response = await fetch(`${API_URL}/api/v1/generate-quiz`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -187,7 +198,10 @@
                     body: JSON.stringify({ topic }),
                 });
                 
-                if (!response.ok) throw new Error('Failed to fetch questions');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch questions');
+                }
                 
                 quizData = await response.json();
                 displayQuestions(quizData);
@@ -196,8 +210,11 @@
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('quizContainer').classList.remove('hidden');
             } catch (error) {
-                alert('Error generating quiz. Please try again.');
-                location.reload();
+                console.error('Error:', error);
+                alert(error.message || 'Error generating quiz. Please try again.');
+                // Show the form again
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('topicForm').classList.remove('hidden');
             }
         });
 
