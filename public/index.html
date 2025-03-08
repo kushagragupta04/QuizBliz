@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizBliz - AI Quiz Generator</title>
+    <link rel="icon" type="image/png" href="Qicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -38,7 +39,63 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
         body {
+            background: #000000;
+        }
+        /* body {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        } */
+         /* Custom Radio Button Styling */
+        .custom-radio input[type="radio"] {
+            display: none;
+        }
+        
+        .custom-radio .radio-mark {
+            display: inline-block;
+            position: relative;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4B5563;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-radio input[type="radio"]:checked + .radio-mark {
+            border-color: #3B82F6;
+        }
+        
+        .custom-radio .radio-mark::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 10px;
+            height: 10px;
+            background: #3B82F6;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .custom-radio input[type="radio"]:checked + .radio-mark::after {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .custom-radio:hover .radio-mark {
+            border-color: #6B7280;
+        }
+        
+        .option-container {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .option-container:hover {
+            background: #111111;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .custom-radio input[type="radio"]:checked ~ .option-text {
+            color: #3B82F6;
         }
     </style>
 </head>
@@ -73,7 +130,10 @@
         <!-- Quiz Questions -->
         <div id="quizContainer" class="hidden">
             <form id="questionForm">
-                <div id="questionsContainer" class="glass-effect p-6 rounded-lg mb-8"></div>
+                <div id="questionsContainer" class="glass-effect p-6 rounded-xl mb-8"></div>
+                <div id="validationError" class="hidden bg-red-500/10 border border-red-500 p-4 rounded-lg mb-4">
+                    <p class="text-red-500 text-center font-semibold text-lg">⚠️ Please attempt all questions before submitting!</p>
+                </div>
                 <button type="submit"
                     class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded transition duration-200">
                     Submit Quiz
@@ -148,11 +208,11 @@
                     <p class="text-lg font-semibold mb-4">${idx + 1}. ${q.question}</p>
                     <div class="space-y-3">
                         ${q.options.map(option => `
-                            <label class="block w-full p-3 rounded hover:bg-dark-300 cursor-pointer transition-colors">
-                                <div class="flex items-start md:items-center space-x-3">
-                                    <input type="radio" name="q${idx}" value="${option}" required
-                                        class="mt-1 md:mt-0 form-radio text-blue-600 focus:ring-blue-500 h-5 w-5">
-                                    <span class="text-sm md:text-base break-words">${option}</span>
+                            <label class="custom-radio block w-full">
+                                <div class="option-container p-3 rounded-lg flex items-start md:items-center space-x-3">
+                                    <input type="radio" name="q${idx}" value="${option}" required>
+                                    <span class="radio-mark mt-1 md:mt-0"></span>
+                                    <span class="option-text text-sm md:text-base break-words">${option}</span>
                                 </div>
                             </label>
                         `).join('')}
@@ -163,21 +223,39 @@
 
         document.getElementById('questionForm').addEventListener('submit', (e) => {
             e.preventDefault();
+            
+            // Reset any previous error state
+            const validationError = document.getElementById('validationError');
+            validationError.classList.add('hidden');
+            
+            // Check if all questions are answered
+            const unansweredQuestions = [];
+            for(let i = 0; i < quizData.length; i++) {
+                if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+                    unansweredQuestions.push(i + 1);
+                }
+            }
+
+            // Show error message if there are unanswered questions
+            if (unansweredQuestions.length > 0) {
+                validationError.classList.remove('hidden');
+                validationError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            
             let score = 0;
             let userAnswers = [];
             
             quizData.forEach((q, idx) => {
                 const selected = document.querySelector(`input[name="q${idx}"]:checked`);
-                if (selected) {
-                    userAnswers.push({
-                        question: q.question,
-                        selectedAnswer: selected.value,
-                        correctAnswer: q.correct_answer,
-                        isCorrect: selected.value === q.correct_answer
-                    });
-                    if (selected.value === q.correct_answer) {
-                        score++;
-                    }
+                userAnswers.push({
+                    question: q.question,
+                    selectedAnswer: selected.value,
+                    correctAnswer: q.correct_answer,
+                    isCorrect: selected.value === q.correct_answer
+                });
+                if (selected.value === q.correct_answer) {
+                    score++;
                 }
             });
             
@@ -213,7 +291,7 @@
                 }
             });
 
-            // Display detailed question review
+            // detailed review
             const reviewContainer = document.getElementById('questionReview');
             reviewContainer.innerHTML = `
                 <div class="space-y-6">
