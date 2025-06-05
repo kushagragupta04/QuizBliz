@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function generateQuestions(topic) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
     
     const prompt = `Generate 10 multiple choice questions about ${topic}. 
     Return ONLY a JSON array with this exact format for each question:
