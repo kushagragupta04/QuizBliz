@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,9 +29,11 @@
             text-decoration: line-through;
             color: #ef4444;
         }
+
         .correct-answer {
             color: #22c55e;
         }
+
         .glass-effect {
             background: rgba(45, 45, 45, 0.7);
             backdrop-filter: blur(10px);
@@ -38,17 +41,20 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
+
         body {
-            background: #000000;
+            background: #000000 url('/public/background.png') no-repeat center center fixed;
+            background-size: cover;
         }
+
         /* body {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
         } */
-         /* Custom Radio Button Styling */
+        /* Custom Radio Button Styling */
         .custom-radio input[type="radio"] {
             display: none;
         }
-        
+
         .custom-radio .radio-mark {
             display: inline-block;
             position: relative;
@@ -58,11 +64,11 @@
             border-radius: 50%;
             transition: all 0.3s ease;
         }
-        
-        .custom-radio input[type="radio"]:checked + .radio-mark {
+
+        .custom-radio input[type="radio"]:checked+.radio-mark {
             border-color: #3B82F6;
         }
-        
+
         .custom-radio .radio-mark::after {
             content: '';
             position: absolute;
@@ -75,35 +81,38 @@
             border-radius: 50%;
             transition: all 0.2s ease;
         }
-        
-        .custom-radio input[type="radio"]:checked + .radio-mark::after {
+
+        .custom-radio input[type="radio"]:checked+.radio-mark::after {
             transform: translate(-50%, -50%) scale(1);
         }
-        
+
         .custom-radio:hover .radio-mark {
             border-color: #6B7280;
         }
-        
+
         .option-container {
             transition: all 0.3s ease;
             border: 1px solid transparent;
         }
-        
+
         .option-container:hover {
             background: #111111;
             border-color: rgba(255, 255, 255, 0.1);
         }
-        
-        .custom-radio input[type="radio"]:checked ~ .option-text {
+
+        .custom-radio input[type="radio"]:checked~.option-text {
             color: #3B82F6;
         }
     </style>
 </head>
+
 <body class="text-gray-200 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <!-- Topic Form -->
         <div id="topicForm" class="mb-8">
-            <h1 class="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">QuizBliz</h1>
+            <h1
+                class="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">
+                QuizBliz</h1>
             <div class="text-center mb-8 text-gray-300">
                 <p>Enter any topic to generate a 10-question quiz instantly.</p>
                 <p>Evaluate your knowledge and get detailed statistics right away!</p>
@@ -132,7 +141,8 @@
             <form id="questionForm">
                 <div id="questionsContainer" class="glass-effect p-6 rounded-xl mb-8"></div>
                 <div id="validationError" class="hidden bg-red-500/10 border border-red-500 p-4 rounded-lg mb-4">
-                    <p class="text-red-500 text-center font-semibold text-lg">⚠️ Please attempt all questions before submitting!</p>
+                    <p class="text-red-500 text-center font-semibold text-lg">⚠️ Please attempt all questions before
+                        submitting!</p>
                 </div>
                 <button type="submit"
                     class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded transition duration-200">
@@ -145,7 +155,7 @@
         <div id="results" class="hidden space-y-8">
             <div class="glass-effect p-6 rounded-lg text-center">
                 <h2 class="text-2xl font-bold mb-4">Quiz Results</h2>
-                
+
                 <!-- Score Display -->
                 <div class="mb-6">
                     <p class="text-xl mb-2">Your score: <span id="score" class="text-green-500 font-bold"></span></p>
@@ -181,15 +191,15 @@
         document.getElementById('quizForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const topic = document.getElementById('topic').value;
-            
+
             // Show loading state
             document.getElementById('topicForm').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
-            
+
             try {
                 const apiUrl = `${getApiUrl()}/api/quiz.js`;
                 console.log('Fetching from:', apiUrl); // Debug log
-                
+
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -198,11 +208,11 @@
                     },
                     body: JSON.stringify({ topic }),
                 });
-                
+
                 // Log response status and headers for debugging
                 console.log('Response status:', response.status);
                 console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-                
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error('Error response:', errorText);
@@ -213,10 +223,10 @@
                         throw new Error(`Server error: ${response.status}. ${errorText}`);
                     }
                 }
-                
+
                 const responseText = await response.text();
                 console.log('Response text:', responseText); // Debug log
-                
+
                 let data;
                 try {
                     data = JSON.parse(responseText);
@@ -224,15 +234,15 @@
                     console.error('JSON parse error:', e);
                     throw new Error('Invalid response format from server');
                 }
-                
+
                 if (!Array.isArray(data)) {
                     console.error('Invalid data format:', data);
                     throw new Error('Invalid quiz data format received');
                 }
-                
+
                 quizData = data;
                 displayQuestions(quizData);
-                
+
                 // Hide loading, show quiz
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('quizContainer').classList.remove('hidden');
@@ -267,14 +277,14 @@
 
         document.getElementById('questionForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
             // Reset any previous error state
             const validationError = document.getElementById('validationError');
             validationError.classList.add('hidden');
-            
+
             // Check if all questions are answered
             const unansweredQuestions = [];
-            for(let i = 0; i < quizData.length; i++) {
+            for (let i = 0; i < quizData.length; i++) {
                 if (!document.querySelector(`input[name="q${i}"]:checked`)) {
                     unansweredQuestions.push(i + 1);
                 }
@@ -286,10 +296,10 @@
                 validationError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
-            
+
             let score = 0;
             let userAnswers = [];
-            
+
             quizData.forEach((q, idx) => {
                 const selected = document.querySelector(`input[name="q${idx}"]:checked`);
                 userAnswers.push({
@@ -302,11 +312,11 @@
                     score++;
                 }
             });
-            
+
             // Show results
             document.getElementById('quizContainer').classList.add('hidden');
             document.getElementById('results').classList.remove('hidden');
-            
+
             // Update score text
             const scorePercentage = (score / quizData.length) * 100;
             document.getElementById('score').textContent = `${score} out of ${quizData.length} (${scorePercentage.toFixed(1)}%)`;
@@ -343,13 +353,13 @@
                         <div class="mb-6 last:mb-0">
                             <p class="text-lg font-semibold mb-4">${idx + 1}. ${answer.question}</p>
                             <div class="space-y-2">
-                                ${answer.isCorrect 
-                                    ? `<p class="correct-answer text-base">✓ Correct: ${answer.selectedAnswer}</p>`
-                                    : `<p class="space-y-2">
+                                ${answer.isCorrect
+                    ? `<p class="correct-answer text-base">✓ Correct: ${answer.selectedAnswer}</p>`
+                    : `<p class="space-y-2">
                                         <span class="strike-through block text-base">✗ Your answer: ${answer.selectedAnswer}</span>
                                         <span class="correct-answer block text-base">Correct answer: ${answer.correctAnswer}</span>
                                        </p>`
-                                }
+                }
                             </div>
                         </div>
                     `).join('')}
@@ -368,4 +378,5 @@
         });
     </script>
 </body>
-</html> 
+
+</html>
